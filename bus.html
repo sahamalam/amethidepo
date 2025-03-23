@@ -1,0 +1,141 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <img alt="UPSRTC logo" class="w-12 h-12 mr-4" src="https://upload.wikimedia.org/wikipedia/commons/8/8b/UPSRTC_Logo.png"/>
+          <div>
+            <h2 class="text-lg font-semibold">
+              AMETHI DEPO
+            </h2>
+            <p class="text-gray-600">
+              38 Buses, 1754 Seats Available
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="busDetailsContainer">
+      <!-- Bus details will be dynamically added here -->
+    </div>
+    <footer class="mt-4 text-center text-gray-600">
+      <p id="lastUpdated"></p>
+    </footer>
+  </div>
+  <script>
+    function calculateDuration(departureTime, arrivalTime) {
+      const [depHours, depMinutes] = departureTime.split(':').map(Number);
+      const [arrHours, arrMinutes] = arrivalTime.split(':').map(Number);
+
+      let durationHours = arrHours - depHours;
+      let durationMinutes = arrMinutes - depMinutes;
+
+      if (durationMinutes < 0) {
+        durationMinutes += 60;
+        durationHours -= 1;
+      }
+
+      if (durationHours < 0) {
+        durationHours += 24;
+      }
+
+      return `${durationHours}h ${durationMinutes}m`;
+    }
+
+    function formatTime(time) {
+      const [hours, minutes] = time.split(':').map(Number);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      return `${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`;
+    }
+
+    function displayBuses() {
+      const busDetailsContainer = document.getElementById('busDetailsContainer');
+      busDetailsContainer.innerHTML = '';
+      const buses = JSON.parse(localStorage.getItem('buses')) || [];
+
+      buses.forEach(bus => {
+        const seatsLeftClass = bus.seatsLeft < 10 ? 'bg-red-200 text-red-800' : bus.seatsLeft < 20 ? 'bg-purple-200 text-purple-800' : 'bg-green-200 text-green-800';
+        const duration = calculateDuration(bus.departureTime, bus.arrivalTime);
+        const formattedDepartureTime = formatTime(bus.departureTime);
+        const formattedArrivalTime = formatTime(bus.arrivalTime);
+
+        const busCard = document.createElement('div');
+        busCard.className = 'bg-white rounded-lg shadow p-4 mb-4';
+        busCard.innerHTML = `
+          <div class="flex flex-col sm:flex-row items-center justify-between mb-1">
+            <div class="flex items-center mb-1 sm:mb-0">
+              <span class="bg-${bus.type === 'Normal' ? 'gray' : bus.type === 'Premium' ? 'blue' : 'green'}-500 text-white text-xs font-semibold px-2 py-1 rounded mr-1">
+                ${bus.type}
+              </span>
+              <h2 class="text-lg font-semibold">
+                ${bus.depo}
+              </h2>
+            </div>
+            <div class="text-right">
+              <span class="bg-yellow-400 text-white text-xs font-semibold px-2 py-1 rounded">
+                ${bus.busNumber}
+              </span>
+            </div>
+          </div>
+          <p class="text-gray-600 mb-1">
+            <strong>${bus.from}</strong> to <strong>${bus.to}</strong> Via ${bus.via}
+            <br/>
+            Starts from ${bus.startsFrom}
+          </p>
+          <div class="flex flex-col sm:flex-row items-center justify-between mb-1">
+            <div class="flex items-center mb-1 sm:mb-0">
+              <span class="text-lg font-semibold">
+                ${formattedDepartureTime}
+              </span>
+              <span class="text-gray-400 mx-1">
+                ${duration}
+              </span>
+              <span class="text-lg font-semibold">
+                ${formattedArrivalTime}
+              </span>
+            </div>
+            <p class="text-black font-semibold">
+              ₹${bus.fare}
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center justify-between mb-1">
+            <span class="${seatsLeftClass} text-sm font-semibold px-2 py-1 rounded mb-1 sm:mb-0">
+              ${bus.seatsLeft} Seats Left
+            </span>
+            <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-2 py-1 rounded">
+              ${bus.busAge} Yr Old Bus
+            </span>
+          </div>
+        `;
+        busDetailsContainer.appendChild(busCard);
+      });
+    }
+
+    function updateFooter() {
+      const lastUpdated = document.getElementById('lastUpdated');
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const formattedDate = oneHourAgo.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      lastUpdated.textContent = `Last updated one hour ago (${formattedDate}).`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      displayBuses();
+      updateFooter();
+    });
+  </script>
+</body>
+</html>
